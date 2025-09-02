@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Test</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>📹 Camera Test</h1>
+            <a href="/" class="btn-secondary">← Back to Home</a>
+        </header>
+
+        <div class="form-section">
+            <h2>Test Your Camera</h2>
+            <p>This page helps you verify that your camera is working properly for the anti-spoofing system.</p>
+            
+            <div class="instructions">
+                <h3>Camera Requirements:</h3>
+                <ul>
+                    <li>Camera must be connected and accessible</li>
+                    <li>Good lighting conditions</li>
+                    <li>Face should be clearly visible</li>
+                    <li>Avoid backlighting or shadows</li>
+                </ul>
+            </div>
+
+            <button onclick="testCamera()" class="btn-primary">🎥 Test Camera</button>
+            
+            <div id="testResult" class="message" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        function testCamera() {
+            const resultDiv = document.getElementById('testResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'message info';
+            resultDiv.innerHTML = '🔄 Testing camera access...';
+
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function(stream) {
+                    resultDiv.className = 'message success';
+                    resultDiv.innerHTML = '✅ Camera is working! You can now use the attendance system.';
+                    
+                    // Stop the stream
+                    stream.getTracks().forEach(track => track.stop());
+                })
+                .catch(function(error) {
+                    resultDiv.className = 'message error';
+                    resultDiv.innerHTML = '❌ Camera access failed: ' + error.message + 
+                                        '<br><br>Please check:<br>• Camera is connected<br>• Browser has camera permissions<br>• No other app is using the camera';
+                });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Student</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>👤 Add New Student</h1>
+            <a href="/" class="btn-secondary">← Back to Home</a>
+        </header>
+
+        <div class="form-section">
+            <!-- Dynamic message area -->
+            <div id="message"></div>
+
+            <form id="addStudentForm">
+                <div class="form-group">
+                    <label for="name">Full Name:</label>
+                    <input type="text" id="name" name="name" required placeholder="Enter student's full name">
+                </div>
+
+                <div class="form-group">
+                    <label for="student_id">Student ID:</label>
+                    <input type="text" id="student_id" name="student_id" required placeholder="e.g., STU006">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email (Optional):</label>
+                    <input type="email" id="email" name="email" placeholder="student@university.edu">
+                </div>
+
+                <button type="submit" class="btn-primary">➕ Add Student</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('addStudentForm').addEventListener('submit', function(e) {
+            e.preventDefault(); // Prevent normal form submission
+            
+            // Get form data
+            const formData = new FormData(this);
+            const name = formData.get('name').trim();
+            const student_id = formData.get('student_id').trim();
+            const email = formData.get('email').trim();
+            
+            // Validate required fields
+            if (!name || !student_id) {
+                document.getElementById('message').innerHTML = 
+                    '<div class="message error">❌ Name and Student ID are required!</div>';
+                return;
+            }
+            
+            // Show loading message
+            document.getElementById('message').innerHTML = 
+                '<div class="message loading">⏳ Adding student...</div>';
+            
+            // Prepare data for JSON submission
+            const studentData = {
+                name: name,
+                student_id: student_id
+            };
+            
+            // Add email if provided
+            if (email) {
+                studentData.email = email;
+            }
+            
+            // Submit as JSON
+            fetch('/add_student', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(studentData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                const messageDiv = document.getElementById('message');
+                if (data.success) {
+                    messageDiv.innerHTML = '<div class="message success">✅ ' + data.message + '</div>';
+                    document.getElementById('addStudentForm').reset();
+                    
+                    // Auto redirect after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 2000);
+                } else {
+                    messageDiv.innerHTML = '<div class="message error">❌ ' + data.message + '</div>';
+                }
+            })
+            .catch(error => {
+                document.getElementById('message').innerHTML = 
+                    '<div class="message error">❌ Network error: ' + error.message + '</div>';
+            });
+        });
+    </script>
+</body>
+</html>

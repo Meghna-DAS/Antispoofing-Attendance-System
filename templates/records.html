@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Records - Anti-Spoofing System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .records-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .records-table th,
+        .records-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .records-table th {
+            background: #007bff;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .records-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .status-present { 
+            background: #d4edda; 
+            color: #155724; 
+            padding: 4px 8px; 
+            border-radius: 4px; 
+            font-weight: bold;
+        }
+        
+        .status-spoofing { 
+            background: #f8d7da; 
+            color: #721c24; 
+            padding: 4px 8px; 
+            border-radius: 4px; 
+            font-weight: bold;
+        }
+        
+        .status-no-face { 
+            background: #fff3cd; 
+            color: #856404; 
+            padding: 4px 8px; 
+            border-radius: 4px; 
+            font-weight: bold;
+        }
+        
+        .no-records {
+            text-align: center;
+            padding: 40px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>📊 Attendance Records</h1>
+            <p>View all attendance records and statistics</p>
+        </header>
+
+        <!-- Statistics Dashboard (Clean Version) -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>{{ stats.total_records or 0 }}</h3>
+                <p>Total Records</p>
+            </div>
+            <div class="stat-card success">
+                <h3>{{ stats.present_count or 0 }}</h3>
+                <p>Present</p>
+            </div>
+            <div class="stat-card danger">
+                <h3>{{ stats.spoofing_count or 0 }}</h3>
+                <p>Spoofing Detected</p>
+            </div>
+            <div class="stat-card warning">
+                <h3>{{ stats.no_face_count or 0 }}</h3>
+                <p>No Face Detected</p>
+            </div>
+        </div>
+
+        <!-- Records Table -->
+        {% if records and records|length > 0 %}
+        <div class="form-section">
+            <h2>📋 Attendance Records ({{ records|length }} total)</h2>
+            
+            <table class="records-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>👤 Student Name</th>
+                        <th>🆔 Student ID</th>
+                        <th>🕐 Date & Time</th>
+                        <th>✅ Status</th>
+                        <th>👁️ Blinks</th>
+                        <th>🔄 Motion</th>
+                        <th>📝 Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in records %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td><strong>{{ record.student_name or 'N/A' }}</strong></td>
+                        <td>{{ record.student_id or 'N/A' }}</td>
+                        <td>{{ record.timestamp or 'N/A' }}</td>
+                        <td>
+                            {% if record.status == 'PRESENT' %}
+                                <span class="status-present">✅ PRESENT</span>
+                            {% elif record.status == 'SPOOFING_DETECTED' %}
+                                <span class="status-spoofing">🚫 SPOOFING</span>
+                            {% elif record.status == 'NO_FACE_DETECTED' %}
+                                <span class="status-no-face">⚠️ NO FACE</span>
+                            {% else %}
+                                <span>{{ record.status or 'UNKNOWN' }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ record.blinks or 0 }}</td>
+                        <td>
+                            {% if record.motion_detected %}
+                                ✅ Yes
+                            {% else %}
+                                ❌ No
+                            {% endif %}
+                        </td>
+                        <td>{{ record.details or 'No details available' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <!-- No Records Found -->
+        <div class="no-records">
+            <h2>📭 No Attendance Records Found</h2>
+            <p>No attendance records exist yet. Here's how to create some:</p>
+            
+            <div style="text-align: left; max-width: 500px; margin: 20px auto;">
+                <h3>🚀 Quick Steps:</h3>
+                <ol>
+                    <li><strong>Add a student:</strong> <a href="/add_student" class="btn-secondary">👤 Add Student</a></li>
+                    <li><strong>Mark attendance:</strong> <a href="/" class="btn-primary">🏠 Go to Home Page</a></li>
+                </ol>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Navigation -->
+        <div class="nav-section">
+            <a href="/" class="btn-primary">🏠 Back to Home</a>
+            <a href="/add_student" class="btn-secondary">👤 Add Student</a>
+            {% if records and records|length > 0 %}
+            <button onclick="clearAllRecords()" class="btn-danger">🗑️ Clear All Records</button>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        // Function to clear all records
+        function clearAllRecords() {
+            if (confirm('⚠️ Are you sure you want to delete ALL attendance records? This cannot be undone!')) {
+                fetch('/clear_records', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ All records cleared successfully!');
+                        location.reload();
+                    } else {
+                        alert('❌ Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('❌ Network error: ' + error.message);
+                });
+            }
+        }
+
+        // Auto-refresh every 30 seconds if on records page
+        setInterval(() => {
+            console.log('🔄 Auto-refreshing records...');
+            location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>
